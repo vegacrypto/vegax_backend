@@ -1,13 +1,10 @@
 package interceptor
 
 import (
-	"bytes"
-	"fmt"
-	"io/ioutil"
+	"log"
 	"net/http"
 	"strings"
 
-	"github.com/druidcaesa/gotool"
 	"github.com/gin-gonic/gin"
 )
 
@@ -16,65 +13,36 @@ var exception = []string{""}
 // http 请求拦截器
 func HttpInterceptor() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		signMap, _ := getSignParam(c, c.Request)
+		path := c.FullPath()
+		if strings.HasPrefix(path, "/i/api/conf/") {
+			c.Next()
+		} else {
+			token, valid := judgeToken(c)
+			log.Println(token)
 
-		fmt.Sprintln("签名参数:", signMap)
-		c.Next()
+			if valid {
+				c.AddParam("user_id", token)
+				c.Next()
+			} else {
+				var data interface{}
+				c.AbortWithStatusJSON(http.StatusNotAcceptable,
+					errObj("101", "need login", data))
+			}
+		}
 	}
 }
 
-func getReqParam(c *gin.Context, request *http.Request) (string, bool) {
-	req := request.Form.Encode()
-	if gotool.StrUtils.HasEmpty(req) {
-		return req, false
+func judgeToken(c *gin.Context) (string, bool) {
+	token := c.PostForm("token")
+	if len(token) == 0 {
+		token = c.DefaultQuery("token", "")
+	}
+	if len(token) > 0 {
+		return token, true
 	}
 	return "", false
 }
 
-func getSignParam(c *gin.Context, request *http.Request) (map[string]string, bool) {
-
-	retMap := map[string]string{}
-
-	paramMap := c.Request.URL.Query()
-
-	for k, v := range paramMap {
-		retMap[k] = strings.Join(v, "")
-	}
-
-	var parms []byte
-	if c.Request.Body != nil {
-		parms, _ = ioutil.ReadAll(c.Request.Body)
-		c.Request.Body = ioutil.NopCloser(bytes.NewBuffer(parms))
-	}
-
-	formParams := strings.Split(string(parms), "&")
-
-	for i := 0; i < len(formParams); i++ {
-
-		fp := strings.Split(formParams[i], "=")
-
-		if fp[0] == "" {
-			continue
-		}
-
-		if len(fp) > 1 {
-			retMap[fp[0]] = fp[1]
-		} else {
-			retMap[fp[0]] = ""
-		}
-	}
-
-	retMap["ts"] = c.GetHeader("ts")
-	retMap["device"] = c.GetHeader("device")
-	return retMap, true
-}
-
-type bodyLogWriter struct {
-	gin.ResponseWriter
-	body *bytes.Buffer
-}
-
-func (w bodyLogWriter) Write(b []byte) (int, error) {
-	w.body.Write(b)
-	return w.ResponseWriter.Write(b)
+func errObj(code string, msg string, data interface{}) gin.H {
+	return gin.H{"code": code, "msg": msg, "data": data}
 }

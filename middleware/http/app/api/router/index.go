@@ -7,5 +7,5 @@ import (
 
 func Routers(e *gin.RouterGroup) {
 	userGroup := e.Group("/api")
-	userGroup.GET("/events_by_contract", c.GetEventsByContract)
+	userGroup.POST("/conf/login", c.HandleLogin)
 }

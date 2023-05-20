@@ -3,9 +3,9 @@ mysql:
   address: "localhost"
   username: "root"
   password: "123456"
-  db: "regulus_main"
+  db: "routerp"
 
 log:
-  path: "/Users/jackielee/Documents/devworkspace/my_workspace/regulustar/log/info.log"
-  node: "/Users/jackielee/Documents/devworkspace/my_workspace/regulustar/log/info-node.log"
+  path: "/Users/jackielee/Documents/devworkspace/vega_workspace/vegax_backend/log/info.log"
+  node: "/Users/jackielee/Documents/devworkspace/vega_workspace/vegax_backend/log/info-node.log"
   level: "debug"

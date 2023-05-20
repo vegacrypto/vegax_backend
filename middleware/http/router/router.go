@@ -36,7 +36,7 @@ func Init() *gin.Engine {
 
 	r.LoadHTMLGlob(staticTplPath)
 
-	apiGroup := r.Group("/dalink", interceptor.HttpInterceptor())
+	apiGroup := r.Group("/i", interceptor.HttpInterceptor())
 	for _, opt := range options {
 		opt(apiGroup)
 	}
