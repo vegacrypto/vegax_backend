@@ -1,14 +1,12 @@
 package interceptor
 
 import (
-	"log"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/vegacrypto/vegax_backend/tool"
 )
-
-var exception = []string{""}
 
 // http 请求拦截器
 func HttpInterceptor() gin.HandlerFunc {
@@ -18,8 +16,6 @@ func HttpInterceptor() gin.HandlerFunc {
 			c.Next()
 		} else {
 			token, valid := judgeToken(c)
-			log.Println(token)
-
 			if valid {
 				c.AddParam("user_id", token)
 				c.Next()
@@ -38,7 +34,12 @@ func judgeToken(c *gin.Context) (string, bool) {
 		token = c.DefaultQuery("token", "")
 	}
 	if len(token) > 0 {
-		return token, true
+		e := tool.DesToken{}
+		realToken, success := e.Decrypt(token)
+		if !success {
+			return "", false
+		}
+		return realToken, true
 	}
 	return "", false
 }

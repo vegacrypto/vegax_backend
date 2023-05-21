@@ -8,4 +8,5 @@ import (
 func Routers(e *gin.RouterGroup) {
 	userGroup := e.Group("/api")
 	userGroup.POST("/conf/login", c.HandleLogin)
+	userGroup.POST("/conf/reg", c.HandleRegister)
 }
