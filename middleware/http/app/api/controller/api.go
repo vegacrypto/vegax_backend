@@ -3,6 +3,7 @@ package controller
 import (
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -55,15 +56,19 @@ func HandleLogin(c *gin.Context) {
 }
 
 func HandleRegister(c *gin.Context) {
-	email := c.PostForm("email")
-	passwd := c.PostForm("passwd")
-	code := c.PostForm("code")
+	email := strings.Trim(c.PostForm("email"), " ")
+	passwd := strings.Trim(c.PostForm("passwd"), " ")
+	code := strings.Trim(c.PostForm("code"), " ")
+
+	var data interface{}
+	if len(email) < 5 || len(passwd) < 5 || len(code) != 4 {
+		c.JSON(http.StatusOK, retObj("108", "invalid parameters", data))
+		return
+	}
 
 	var result []model.User
 	db := database.GetDb()
 	db.Model(&model.User{}).Where("email = ?", email).Find(&result)
-
-	var data interface{}
 
 	if len(result) > 0 {
 		c.JSON(http.StatusOK, retObj("106", "user exists", data))
