@@ -9,4 +9,7 @@ func Routers(e *gin.RouterGroup) {
 	userGroup := e.Group("/api")
 	userGroup.POST("/conf/login", c.HandleLogin)
 	userGroup.POST("/conf/reg", c.HandleRegister)
+
+	userGroup.POST("/chat/save", c.HandleChatInput)
+	userGroup.POST("/chat/history", c.HandleChatHistory)
 }

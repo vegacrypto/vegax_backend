@@ -1,6 +1,8 @@
 package model
 
-import "time"
+import (
+	"time"
+)
 
 type BaseModel struct {
 	Id         uint64 `gorm:"AUTO_INCREMENT;PRIMARY_KEY"`
@@ -19,4 +21,18 @@ type User struct {
 
 func (User) TableName() string {
 	return "i_user"
+}
+
+type Chat struct {
+	BaseModel
+	Content  string
+	UserId   uint64
+	Source   string
+	Status   int
+	ChatId   uint64
+	TaskCode string
+}
+
+func (Chat) TableName() string {
+	return "i_chat"
 }
