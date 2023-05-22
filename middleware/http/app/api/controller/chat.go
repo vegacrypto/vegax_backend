@@ -18,6 +18,36 @@ import (
 
 const url = "http://localhost:7050/chat"
 
+func HandleChatOp(c *gin.Context) {
+	p := c.Params
+	user_id, get := p.Get("user_id")
+	log.Println(user_id, get)
+
+	userId, _ := strconv.ParseUint(user_id, 10, 64)
+
+	chat_id := strings.Trim(c.PostForm("chat_id"), " ")
+	chatId, _ := strconv.ParseUint(chat_id, 10, 64)
+
+	var data interface{}
+
+	if chatId == 0 {
+		c.JSON(http.StatusOK, retObj("203", "parent chat id empty", data))
+		return
+	}
+
+	var chat model.Chat
+
+	db := database.GetDb()
+	db.Model(&model.Chat{}).Where("user_id = ? and id = ?", userId, chatId).Find(&chat)
+
+	if chat.ChatId == 0 {
+		c.JSON(http.StatusOK, retObj("204", "parent chat not support op-setting", data))
+	} else {
+		db.Model(&chat).Update("op", 1)
+		c.JSON(http.StatusOK, retObj("100", "success", chat))
+	}
+}
+
 func HandleChatsById(c *gin.Context) {
 	p := c.Params
 	user_id, get := p.Get("user_id")
@@ -77,6 +107,7 @@ func HandleChatInput(c *gin.Context) {
 		Status:   0,
 		Expect:   len(suppLLMs),
 		TaskCode: taskCode,
+		Op:       0,
 	}
 	db.Model(&model.Chat{}).Save(chat)
 
@@ -146,7 +177,6 @@ func makeReqPlatforms(userId, chatId uint64, prompt string, suppLLMs []model.Sys
 		retObj := map[string]interface{}{}
 		err := json.Unmarshal([]byte(retStr), &retObj)
 
-		// rpCode := retObj["code"].(int)
 		rp := retObj["AI_response"].(string)
 		rpStr, _ := zhToUnicode([]byte(rp))
 
@@ -166,6 +196,7 @@ func makeReqPlatforms(userId, chatId uint64, prompt string, suppLLMs []model.Sys
 			Expect:   1,
 			TaskCode: chatObj.TaskCode,
 			Source:   suppLLMs[i].ConfKey,
+			Op:       0,
 		}
 		db.Model(&model.Chat{}).Save(chat)
 	}

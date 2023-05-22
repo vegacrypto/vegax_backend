@@ -14,4 +14,5 @@ func Routers(e *gin.RouterGroup) {
 	userGroup.POST("/chat/save", c.HandleChatInput)
 	userGroup.POST("/chat/history", c.HandleChatHistory)
 	userGroup.POST("/chat/bychat", c.HandleChatsById)
+	userGroup.POST("/chat/setop", c.HandleChatOp)
 }

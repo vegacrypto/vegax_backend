@@ -32,6 +32,7 @@ type Chat struct {
 	Status   int
 	ChatId   uint64
 	TaskCode string
+	Op       int
 }
 
 func (Chat) TableName() string {
