@@ -36,3 +36,15 @@ type Chat struct {
 func (Chat) TableName() string {
 	return "i_chat"
 }
+
+type SysConf struct {
+	BaseModel
+	ConfKey   string
+	ConfValue string
+	ConfType  string
+	Other     string
+}
+
+func (SysConf) TableName() string {
+	return "i_sys_conf"
+}

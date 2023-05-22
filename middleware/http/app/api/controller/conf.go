@@ -92,3 +92,22 @@ func HandleRegister(c *gin.Context) {
 
 	c.JSON(http.StatusOK, retObj("100", "success", data))
 }
+
+func HandleTaskSupp(c *gin.Context) {
+
+	var result []model.SysConf
+	db := database.GetDb()
+	db.Model(&model.SysConf{}).Where("conf_type = ?", "task").Find(&result)
+
+	ret := []map[string]string{}
+	for i := range result {
+		// ret[result[i].ConfKey] = result[i].ConfValue
+
+		ret = append(ret, map[string]string{
+			"key":   result[i].ConfKey,
+			"label": result[i].ConfValue,
+		})
+	}
+
+	c.JSON(http.StatusOK, retObj("100", "success", ret))
+}
