@@ -16,6 +16,8 @@ import (
 	database "github.com/vegacrypto/vegax_backend/system"
 )
 
+const url = "http://localhost:7050/chat"
+
 func HandleChatsById(c *gin.Context) {
 	p := c.Params
 	user_id, get := p.Get("user_id")
@@ -103,7 +105,6 @@ func HandleChatHistory(c *gin.Context) {
 
 /* private methods area for multi thread */
 func makeReqPlatforms(userId, chatId uint64, prompt string, suppLLMs []model.SysConf) {
-	url := "http://192.168.3.17:7050/chat"
 	aiChannels := make([]chan string, len(suppLLMs))
 	for i := range suppLLMs {
 		aiChannels[i] = make(chan string)
