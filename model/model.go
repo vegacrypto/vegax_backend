@@ -28,6 +28,7 @@ type Chat struct {
 	Content  string
 	UserId   uint64
 	Source   string
+	Expect   int
 	Status   int
 	ChatId   uint64
 	TaskCode string

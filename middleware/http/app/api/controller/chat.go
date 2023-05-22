@@ -23,7 +23,7 @@ func HandleChatsById(c *gin.Context) {
 
 	userId, _ := strconv.ParseUint(user_id, 10, 64)
 
-	chat_id, _ := p.Get("chat_id")
+	chat_id := strings.Trim(c.PostForm("chat_id"), " ")
 	chatId, _ := strconv.ParseUint(chat_id, 10, 64)
 
 	var data interface{}
@@ -36,7 +36,7 @@ func HandleChatsById(c *gin.Context) {
 	var chats []model.Chat
 
 	db := database.GetDb()
-	db.Model(&model.SysConf{}).Where("user_id = ? and chat_id = ?", userId, chatId).Find(&chats)
+	db.Model(&model.Chat{}).Where("user_id = ? and chat_id = ?", userId, chatId).Find(&chats)
 
 	c.JSON(http.StatusOK, retObj("100", "success", chats))
 }
@@ -73,6 +73,7 @@ func HandleChatInput(c *gin.Context) {
 		UserId:   userId,
 		Content:  prompt,
 		Status:   0,
+		Expect:   len(suppLLMs),
 		TaskCode: taskCode,
 	}
 	db.Model(&model.Chat{}).Save(chat)
@@ -161,6 +162,7 @@ func makeReqPlatforms(userId, chatId uint64, prompt string, suppLLMs []model.Sys
 			ChatId:   chatId,
 			Content:  rpStr,
 			Status:   1,
+			Expect:   1,
 			TaskCode: chatObj.TaskCode,
 			Source:   suppLLMs[i].ConfKey,
 		}
