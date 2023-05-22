@@ -2,7 +2,6 @@ package controller
 
 import (
 	"log"
-	"math/big"
 	"net/http"
 	"strconv"
 	"strings"
@@ -42,14 +41,16 @@ func HandleChatInput(c *gin.Context) {
 	db.Model(&model.Chat{}).Save(chat)
 
 	//这里需要启动多线程去交互LLM
-	c.JSON(http.StatusOK, retObj("100", "success", nil))
+	c.JSON(http.StatusOK, retObj("100", "success", chat))
 }
 
 func HandleChatHistory(c *gin.Context) {
 	p := c.Params
 	user_id, get := p.Get("user_id")
-	log.Println(user_id, get)
-	userId, _ := new(big.Int).SetString(user_id, 10)
+
+	userId, _ := strconv.ParseUint(user_id, 10, 64)
+
+	log.Println(user_id, get, userId)
 
 	var result []model.Chat
 
