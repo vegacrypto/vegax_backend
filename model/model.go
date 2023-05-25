@@ -25,14 +25,15 @@ func (User) TableName() string {
 
 type Chat struct {
 	BaseModel
-	Content  string
-	UserId   uint64
-	Source   string
-	Expect   int
-	Status   int
-	ChatId   uint64
-	TaskCode string
-	Op       int
+	Content        string
+	UserId         uint64
+	Source         string
+	Expect         int
+	Status         int
+	ChatId         uint64
+	TaskCode       string
+	Op             int
+	ExternalEnable int
 }
 
 func (Chat) TableName() string {

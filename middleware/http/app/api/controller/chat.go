@@ -15,9 +15,9 @@ import (
 	database "github.com/vegacrypto/vegax_backend/system"
 )
 
-const url = "http://localhost:7050/chat"
+// const url = "http://localhost:7050/chat"
 
-// const url = "http://192.168.3.17:7050/chat"
+const url = "http://192.168.3.17:7050/chat"
 
 func HandleChatOp(c *gin.Context) {
 	p := c.Params
@@ -88,6 +88,14 @@ func HandleChatInput(c *gin.Context) {
 		return
 	}
 	taskCode := strings.Trim(c.PostForm("task_code"), " ")
+	external := strings.Trim(c.PostForm("external"), " ")
+
+	external_enable := false
+	external_code := 0
+	if external == "1" {
+		external_enable = true
+		external_code = 1
+	}
 
 	db := database.GetDb()
 
@@ -103,19 +111,20 @@ func HandleChatInput(c *gin.Context) {
 			AddTime:    time.Now(),
 			UpdateTime: time.Now(),
 		},
-		UserId:   userId,
-		Content:  prompt,
-		Status:   0,
-		Expect:   len(suppLLMs),
-		TaskCode: taskCode,
-		Op:       0,
+		UserId:         userId,
+		Content:        prompt,
+		Status:         0,
+		Expect:         len(suppLLMs),
+		TaskCode:       taskCode,
+		Op:             0,
+		ExternalEnable: external_code,
 	}
 	db.Model(&model.Chat{}).Save(chat)
 
 	c.JSON(http.StatusOK, retObj("100", "success", chat))
 
 	//这里需要启动多线程去交互LLM
-	go makeReqPlatforms(userId, chat.Id, prompt, suppLLMs)
+	go makeReqPlatforms(userId, chat.Id, external_enable, prompt, suppLLMs)
 }
 
 func HandleChatHistory(c *gin.Context) {
@@ -136,7 +145,7 @@ func HandleChatHistory(c *gin.Context) {
 }
 
 /* private methods area for multi thread */
-func makeReqPlatforms(userId, chatId uint64, prompt string, suppLLMs []model.SysConf) {
+func makeReqPlatforms(userId, chatId uint64, externalEnable bool, prompt string, suppLLMs []model.SysConf) {
 	aiChannels := make([]chan string, len(suppLLMs))
 	for i := range suppLLMs {
 		aiChannels[i] = make(chan string)
@@ -147,6 +156,7 @@ func makeReqPlatforms(userId, chatId uint64, prompt string, suppLLMs []model.Sys
 				"scene":     "",
 				"chat":      prompt,
 				"model_key": mod.Other,
+				"agent_use": externalEnable,
 			}
 			b, _ := json.Marshal(params)
 
@@ -192,19 +202,24 @@ func makeReqPlatforms(userId, chatId uint64, prompt string, suppLLMs []model.Sys
 			}
 		}
 
+		externalCode := 0
+		if externalEnable {
+			externalCode = 1
+		}
 		chat := &model.Chat{
 			BaseModel: model.BaseModel{
 				AddTime:    resTime,
 				UpdateTime: resTime,
 			},
-			UserId:   userId,
-			ChatId:   chatId,
-			Content:  rpStr,
-			Status:   1,
-			Expect:   1,
-			TaskCode: chatObj.TaskCode,
-			Source:   suppLLMs[i].ConfKey,
-			Op:       0,
+			UserId:         userId,
+			ChatId:         chatId,
+			Content:        rpStr,
+			Status:         1,
+			Expect:         1,
+			TaskCode:       chatObj.TaskCode,
+			Source:         suppLLMs[i].ConfKey,
+			Op:             0,
+			ExternalEnable: externalCode,
 		}
 		db.Model(&model.Chat{}).Save(chat)
 	}
