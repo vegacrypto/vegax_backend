@@ -3,7 +3,6 @@ package controller
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -16,7 +15,8 @@ import (
 	database "github.com/vegacrypto/vegax_backend/system"
 )
 
-const url = "http://localhost:7050/chat"
+// const url = "http://localhost:7050/chat"
+const url = "http://192.168.3.17:7050/chat"
 
 func HandleChatOp(c *gin.Context) {
 	p := c.Params
@@ -141,10 +141,11 @@ func makeReqPlatforms(userId, chatId uint64, prompt string, suppLLMs []model.Sys
 		aiChannels[i] = make(chan string)
 		go func(ch chan string, mod *model.SysConf) {
 			params := map[string]interface{}{
-				"model_id": mod.ConfValue,
-				"chat_id":  userId,
-				"scene":    "",
-				"chat":     prompt,
+				"model_id":  mod.ConfValue,
+				"chat_id":   userId,
+				"scene":     "",
+				"chat":      prompt,
+				"model_key": mod.Other,
 			}
 			b, _ := json.Marshal(params)
 
@@ -152,15 +153,17 @@ func makeReqPlatforms(userId, chatId uint64, prompt string, suppLLMs []model.Sys
 			req.Header.Set("Content-Type", "application/octet-stream")
 			client := &http.Client{}
 			resp, err := client.Do(req)
+
+			responseData := ""
 			if err != nil {
-				panic(err)
+				log.Println(err)
+			} else {
+				defer resp.Body.Close()
+
+				body, _ := ioutil.ReadAll(resp.Body)
+
+				responseData = string(body)
 			}
-			defer resp.Body.Close()
-
-			body, _ := ioutil.ReadAll(resp.Body)
-
-			responseData := string(body)
-			fmt.Println(responseData)
 			ch <- responseData
 		}(aiChannels[i], &suppLLMs[i])
 	}
@@ -174,14 +177,18 @@ func makeReqPlatforms(userId, chatId uint64, prompt string, suppLLMs []model.Sys
 	for i, ch := range aiChannels { //遍历切片，等待子协程结束
 		retStr := <-ch
 
-		retObj := map[string]interface{}{}
-		err := json.Unmarshal([]byte(retStr), &retObj)
+		rpStr := ""
 
-		rp := retObj["AI_response"].(string)
-		rpStr, _ := zhToUnicode([]byte(rp))
+		if len(retStr) > 0 {
+			retObj := map[string]interface{}{}
+			err := json.Unmarshal([]byte(retStr), &retObj)
 
-		if err != nil {
-			rpStr = err.Error()
+			rp := retObj["AI_response"].(string)
+			rpStr, _ = zhToUnicode([]byte(rp))
+
+			if err != nil {
+				rpStr = err.Error()
+			}
 		}
 
 		chat := &model.Chat{
