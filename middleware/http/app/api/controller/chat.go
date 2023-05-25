@@ -15,8 +15,9 @@ import (
 	database "github.com/vegacrypto/vegax_backend/system"
 )
 
-// const url = "http://localhost:7050/chat"
-const url = "http://192.168.3.17:7050/chat"
+const url = "http://localhost:7050/chat"
+
+// const url = "http://192.168.3.17:7050/chat"
 
 func HandleChatOp(c *gin.Context) {
 	p := c.Params
