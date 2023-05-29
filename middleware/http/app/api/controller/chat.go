@@ -194,11 +194,14 @@ func makeReqPlatforms(userId, chatId uint64, externalEnable bool, prompt string,
 			retObj := map[string]interface{}{}
 			err := json.Unmarshal([]byte(retStr), &retObj)
 
-			rp := retObj["AI_response"].(string)
-			rpStr, _ = zhToUnicode([]byte(rp))
-
 			if err != nil {
 				rpStr = err.Error()
+			} else {
+				log.Println("ai response", retObj["code"], retObj["AI_response"])
+				if retObj["AI_response"] != nil {
+					rp := retObj["AI_response"].(string)
+					rpStr, _ = zhToUnicode([]byte(rp))
+				}
 			}
 		}
 
