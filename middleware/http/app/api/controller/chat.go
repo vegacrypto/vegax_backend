@@ -146,14 +146,40 @@ func HandleChatHistory(c *gin.Context) {
 
 /* private methods area for multi thread */
 func makeReqPlatforms(userId, chatId uint64, externalEnable bool, prompt string, suppLLMs []model.SysConf) {
+	var result []model.Chat
+	db := database.GetDb()
+	db.Model(&model.Chat{}).Where("user_id = ? and chat_id < ?", userId, chatId).Order("add_time asc").Limit(100).Find(&result)
+
+	modelChatHis := map[string]string{}
+
+	for i := range result {
+		if i == 0 && result[i].ChatId != 0 {
+			continue
+		}
+		v := result[i]
+		if v.ChatId == 0 && i < len(result) {
+			ques := "Q: " + v.Content + "\n"
+			for j := i + 1; j < len(result); j++ {
+				s := result[j]
+				if s.ChatId == v.Id {
+					source := s.Source
+					answ := "A: " + s.Content + "\n"
+					modelChatHis[source] += (ques + answ)
+				}
+			}
+		}
+	}
+
 	aiChannels := make([]chan string, len(suppLLMs))
 	for i := range suppLLMs {
 		aiChannels[i] = make(chan string)
-		go func(ch chan string, mod *model.SysConf) {
+		go func(ch chan string, mod *model.SysConf, chatCtx map[string]string) {
+			chatHis := chatCtx[mod.ConfKey]
+			log.Println(mod.ConfKey, chatHis)
 			params := map[string]interface{}{
 				"model_id":  mod.ConfValue,
 				"chat_id":   userId,
-				"scene":     "",
+				"scene":     chatHis,
 				"chat":      prompt,
 				"model_key": mod.Other,
 				"agent_use": externalEnable,
@@ -176,11 +202,10 @@ func makeReqPlatforms(userId, chatId uint64, externalEnable bool, prompt string,
 				responseData = string(body)
 			}
 			ch <- responseData
-		}(aiChannels[i], &suppLLMs[i])
+		}(aiChannels[i], &suppLLMs[i], modelChatHis)
 	}
 
 	resTime := time.Now()
-	db := database.GetDb()
 
 	var chatObj model.Chat
 	db.Model(&model.Chat{}).Where("id = ?", chatId).Last(&chatObj)
