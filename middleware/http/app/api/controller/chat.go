@@ -148,7 +148,7 @@ func HandleChatHistory(c *gin.Context) {
 func makeReqPlatforms(userId, chatId uint64, externalEnable bool, prompt string, suppLLMs []model.SysConf) {
 	var result []model.Chat
 	db := database.GetDb()
-	db.Model(&model.Chat{}).Where("user_id = ? and chat_id < ?", userId, chatId).Order("add_time asc").Limit(100).Find(&result)
+	db.Model(&model.Chat{}).Where("user_id = ? and chat_id < ?", userId, chatId).Order("add_time asc").Limit(10).Find(&result)
 
 	modelChatHis := map[string]string{}
 
@@ -222,7 +222,7 @@ func makeReqPlatforms(userId, chatId uint64, externalEnable bool, prompt string,
 			if err != nil {
 				rpStr = err.Error()
 			} else {
-				log.Println("ai response", retObj["code"], retObj["AI_response"])
+				log.Println("ai response", retObj["code"], retObj["message"], retObj["AI_response"])
 				if retObj["AI_response"] != nil {
 					rp := retObj["AI_response"].(string)
 					rpStr, _ = zhToUnicode([]byte(rp))
