@@ -148,22 +148,46 @@ func HandleChatHistory(c *gin.Context) {
 func makeReqPlatforms(userId, chatId uint64, externalEnable bool, prompt string, suppLLMs []model.SysConf) {
 	var result []model.Chat
 	db := database.GetDb()
-	db.Model(&model.Chat{}).Where("user_id = ? and chat_id < ?", userId, chatId).Order("add_time asc").Limit(10).Find(&result)
+	// db.Model(&model.Chat{}).Where("user_id = ? and chat_id < ?", userId, chatId).Order("add_time desc").Limit(80).Find(&result)
+
+	// modelChatHis := map[string]string{}
+
+	// for i := range result {
+	// 	if i == 0 && result[i].ChatId != 0 {
+	// 		continue
+	// 	}
+	// 	v := result[i]
+	// 	if v.ChatId == 0 && i < len(result) {
+	// 		ques := "Q: " + v.Content + "\n"
+	// 		for j := i + 1; j < len(result); j++ {
+	// 			s := result[j]
+	// 			if s.ChatId == v.Id {
+	// 				source := s.Source
+	// 				answ := "A: " + s.Content + "\n"
+	// 				modelChatHis[source] += (ques + answ)
+	// 			}
+	// 		}
+	// 	}
+	// }
+
+	db.Model(&model.Chat{}).Where("user_id=? and chat_id=?", userId, 0).Order("add_time desc").Limit(20).Find(&result)
+	var chatParentIds []uint64
 
 	modelChatHis := map[string]string{}
 
-	for i := range result {
-		if i == 0 && result[i].ChatId != 0 {
-			continue
+	if len(result) > 0 {
+		for i := range result {
+			chatParentIds = append(chatParentIds, result[i].Id)
 		}
-		v := result[i]
-		if v.ChatId == 0 && i < len(result) {
+		var sonChatRecs []model.Chat
+		db.Model(&model.Chat{}).Where("chat_id IN ?", chatParentIds).Find(&sonChatRecs)
+		for i := range result {
+			v := result[i]
 			ques := "Q: " + v.Content + "\n"
-			for j := i + 1; j < len(result); j++ {
-				s := result[j]
-				if s.ChatId == v.Id {
-					source := s.Source
-					answ := "A: " + s.Content + "\n"
+			for j := range sonChatRecs {
+				if v.Id == sonChatRecs[j].ChatId {
+					source := sonChatRecs[j].Source
+					answ := "A: " + sonChatRecs[j].Content + "\n"
 					modelChatHis[source] += (ques + answ)
 				}
 			}
